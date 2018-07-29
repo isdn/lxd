@@ -5,10 +5,12 @@ Cloud init scripts are supported.
 
 The following user properties are accepted:
 
+```
 user.meta-data
 user.network-config
 user.user-data
 user.vendor-data
+```
 
 For example, network settings:
 
