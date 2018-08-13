@@ -4,7 +4,7 @@ TS=`date +%s`
 DATE=`date --date="@${TS}" +%Y%m%d`
 VERSION="18.04"
 RELEASE="bionic"
-ID="custom-v5" # custom ID
+ID="custom-v6" # custom ID
 BUILD_DIR="build_${TS}"
 RES_DIR="resources"
 CFILE="customize-${VERSION}.sh"
@@ -28,7 +28,7 @@ cat <<EOT >> ${BUILD_DIR}/rootfs/${CFILE}
 echo "nameserver 1.1.1.1" >> /etc/resolv.conf
 apt update && apt -y upgrade
 mkdir /etc/network/ # for netplan
-apt -y install less vim-tiny net-tools iputils-ping systemd netplan.io cloud-init
+apt -y install less vim-tiny net-tools iputils-ping systemd netplan.io cloud-init locales
 
 cat <<_EOT >> /etc/netplan/01-netcfg.yaml
 network:
@@ -46,6 +46,44 @@ sed -i "s/^#FallbackNTP=ntp.ubuntu.com/FallbackNTP=ntp.ubuntu.com 0.pool.ntp.org
 sed -i "s/^#DNS=/DNS=1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4/" /etc/systemd/resolved.conf
 sed -i "s/#DNSSEC=no/DNSSEC=allow-downgrade/" /etc/systemd/resolved.conf
 echo 'datasource_list: [ NoCloud ]' > /etc/cloud/cloud.cfg.d/90_dpkg.cfg
+
+# https://github.com/systemd/systemd/issues/2154
+sed -i "s|ExecStart=/lib/systemd/systemd-networkd-wait-online|ExecStart=/lib/systemd/systemd-networkd-wait-online --ignore eth0|" /lib/systemd/system/systemd-networkd-wait-online.service
+
+cat <<_EOT >> /etc/cloud/cloud.cfg.d/100_custom.cfg
+users:
+   - root
+
+cloud_init_modules:
+ - seed_random
+ - write-files
+ - mounts
+ - set_hostname
+ - update_hostname
+ - update_etc_hosts
+ - ca-certs
+ - rsyslog
+
+cloud_config_modules:
+ - emit_upstart
+ - locale
+ - apt-pipelining
+ - apt-configure
+ - timezone
+ - runcmd
+
+cloud_final_modules:
+ - package-update-upgrade-install
+ - lxd
+ - scripts-vendor
+ - scripts-per-once
+ - scripts-per-boot
+ - scripts-per-instance
+ - scripts-user
+ - phone-home
+ - final-message
+ - power-state-change
+_EOT
 
 systemctl enable systemd-networkd
 apt clean
