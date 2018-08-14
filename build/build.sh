@@ -4,7 +4,7 @@ TS=`date +%s`
 DATE=`date --date="@${TS}" +%Y%m%d`
 VERSION="18.04"
 RELEASE="bionic"
-ID="custom-v6" # custom ID
+ID="custom-v7" # custom ID
 BUILD_DIR="build_${TS}"
 RES_DIR="resources"
 CFILE="customize-${VERSION}.sh"
@@ -28,7 +28,9 @@ cat <<EOT >> ${BUILD_DIR}/rootfs/${CFILE}
 echo "nameserver 1.1.1.1" >> /etc/resolv.conf
 apt update && apt -y upgrade
 mkdir /etc/network/ # for netplan
-apt -y install less vim-tiny net-tools iputils-ping systemd netplan.io cloud-init locales
+echo "Etc/UTC" > /etc/timezone
+export DEBIAN_FRONTEND=noninteractive && \
+apt -y install less vim-tiny net-tools iputils-ping systemd netplan.io cloud-init locales tzdata
 
 cat <<_EOT >> /etc/netplan/01-netcfg.yaml
 network:
